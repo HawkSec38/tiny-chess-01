@@ -1,5 +1,5 @@
 import json,os,sys,urllib.error,urllib.request
-E=os.environ.get("MAKEFUN_ENV_URL")or sys.exit("MAKEFUN_ENV_URL not set")
+E=os.environ.get("MAKEFUN_ENV_URL")or sys.exit(1)
 V={"p":10,"n":30,"b":30,"r":50,"q":90,"k":900}
 
 def post(t,b):
@@ -16,29 +16,32 @@ def board_of(fen):
    else:b["abcdefgh"[f]+str(8-i)]=c;f+=1
  return b
 
-def evaluate(board):
+def eval_board(b):
  v=0
- for sq,p in board.items():
-  sign=1 if p.isupper()else-1
-  v+=sign*V[p.lower()]
+ for s,p in b.items():
+  sgn=1 if p.isupper()else-1
+  v+=sgn*V[p.lower()]
+  # Add small positional bonus for center control
+  cx,cy=ord(s[0])-97,8-int(s[1])
+  if 2<=cx<=5 and 2<=cy<=5:v+=sgn*1
  return v
 
 def choose(fen,legal):
  board=board_of(fen)
- best_move=legal[0]
- best_score=-99999
- for move in legal:
-  board2=board.copy()
-  from_sq,to_sq=move[:2],move[2:4]
-  board2[to_sq]=board[from_sq]
-  del board2[from_sq]
-  score=evaluate(board2)
-  if score>best_score or(score==best_score and move<best_move):
-   best_score=score
-   best_move=move
- return best_move
+ best=legal[0]
+ best_v=-99999
+ # Try top 20 moves with 1-ply lookahead
+ for m in legal[:20]:
+  b2=board.copy()
+  b2[m[2:4]]=b2[m[:2]]
+  del b2[m[:2]]
+  v=eval_board(b2)
+  if v>best_v or(v==best_v and m<best):
+   best_v=v
+   best=m
+ return best
 
-while True:
+while 1:
  g=post("/game",{})
  if g["status"]=="done":break
  while g["status"]=="your_move":
