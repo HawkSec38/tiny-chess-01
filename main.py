@@ -26,21 +26,21 @@ def Eval(b):
   if 2<=x<=5 and 2<=y<=5:v+=sgn*5
  return v
 
+def make_move(b, move):
+ b2=b.copy()
+ from_sq, to_sq = move[:2], move[2:4]
+ b2[to_sq]=b[from_sq]
+ if to_sq in b: del b2[to_sq]
+ del b2[from_sq]
+ return b2
+
 def order(b,l):
- ms=[]
- for m in l:
-  b2=b.copy()
-  b2[m[2:4]]=b[m[:2]]
-  del b2[m[:2]]
-  ms.append((Eval(b2),m))
- return sorted(ms,reverse=True)
+ return sorted([(Eval(make_move(b,m)),m) for m in l], reverse=True)
 
 def ab(b,l,d,a,ba,mo):
  if d==0:return Eval(b)
  for v,m in mo:
-  b2=b.copy()
-  b2[m[2:4]]=b[m[:2]]
-  del b2[m[:2]]
+  b2=make_move(b,m)
   s=-ab(b2,[x for x in l if x!=m],d-1,-a,-ba,order(b2,[x for x in l if x!=m]))
   if s>a:a=s;ba=m
   if a>=ba:break
@@ -51,10 +51,8 @@ def C(f,l):
  mo=order(b,l)
  best=mo[0][1]
  best_v=-999999
- for v,m in mo[:8]:
-  b2=b.copy()
-  b2[m[2:4]]=b[m[:2]]
-  del b2[m[:2]]
+ for v,m in mo[:12]:
+  b2=make_move(b,m)
   s=ab(b2,[x for x in l if x!=m],2,-999999,best_v,order(b2,[x for x in l if x!=m]))
   if s>best_v:best_v=s;best=m
  return best
